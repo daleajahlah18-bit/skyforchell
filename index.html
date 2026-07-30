@@ -661,6 +661,18 @@
             audio.currentTime = ((e.clientX - r.left) / r.width) * audio.duration;
         });
 
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: 'The Best Part',
+                artist: 'A Private Exhibition',
+                artwork: [
+                    { src: 'image1.jpeg', sizes: '512x512', type: 'image/jpeg' }
+                ]
+            });
+            navigator.mediaSession.setActionHandler('play', () => { if (!isPlaying) togglePlay(); });
+            navigator.mediaSession.setActionHandler('pause', () => { if (isPlaying) togglePlay(); });
+        }
+
         // --- OPENING ---
         gsap.to('.opening-text span', { opacity: 1, y: 0, duration: 1.5, stagger: 1.0, delay: 0.5, ease: 'power2.out' });
         gsap.to('.enter-btn', { opacity: 1, duration: 1, delay: 6.0 });
