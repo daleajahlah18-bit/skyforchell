@@ -898,10 +898,24 @@
                 mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
             });
+            let mTouchY = 0;
             // Mobile touch
-            window.addEventListener('touchstart', (e) => { if (activeScene === 'planetarium') { pMouseDown = true; pMouseX = e.touches[0].clientX; pMouseY = e.touches[0].clientY; checkInteraction(e.touches[0]); } });
+            window.addEventListener('touchstart', (e) => { 
+                if (activeScene === 'museum') {
+                    mTouchY = e.touches[0].clientY;
+                }
+                if (activeScene === 'planetarium') { 
+                    pMouseDown = true; pMouseX = e.touches[0].clientX; pMouseY = e.touches[0].clientY; checkInteraction(e.touches[0]); 
+                } 
+            });
             window.addEventListener('touchend', () => { pMouseDown = false; });
             window.addEventListener('touchmove', (e) => {
+                if (activeScene === 'museum') {
+                    const dy = mTouchY - e.touches[0].clientY;
+                    mTouchY = e.touches[0].clientY;
+                    targetScrollY += dy * 0.1;
+                    targetScrollY = Math.max(0, Math.min(targetScrollY, (TOTAL_ARTWORKS + 1) * 15 + 2));
+                }
                 if (activeScene === 'planetarium' && pMouseDown) {
                     targetPYaw += (e.touches[0].clientX - pMouseX) * 0.005;
                     targetPPitch += (e.touches[0].clientY - pMouseY) * 0.005;
