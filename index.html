@@ -357,6 +357,33 @@
 
         .elevator-visible {
             opacity: 1;
+            pointer-events: auto;
+        }
+        
+        #scroll-hint, #drag-hint {
+            position: absolute;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+            animation: pulse-hint 2s infinite ease-in-out;
+        }
+        
+        #scroll-hint.hidden-hint, #drag-hint.hidden-hint {
+            opacity: 0 !important;
+            animation: none !important;
+        }
+
+        @keyframes pulse-hint {
+            0%, 100% { opacity: 0.3; transform: translateX(-50%) translateY(0); }
+            50% { opacity: 0.8; transform: translateX(-50%) translateY(-5px); }
         }
 
         #planetarium-ui {
@@ -583,6 +610,7 @@
     <div id="scroll-content"></div>
 
     <div class="ui-layer" id="ui-layer">
+        <div id="scroll-hint">Scroll gently to explore</div>
         <div class="artwork-info" id="info-panel">
             <div class="info-num" id="info-num">I</div>
             <h2 class="info-title" id="info-title">Title</h2>
@@ -596,6 +624,7 @@
     </div>
 
     <div id="planetarium-ui">
+        <div id="drag-hint">Drag to look around 360°</div>
         <div class="planet-text" id="pt1">We spend so much time<br>looking back at memories.</div>
         <div class="planet-text" id="pt2">Sometimes...<br>it's just as beautiful<br>to look forward.</div>
         <div id="planet-hint">Look around. Tap the brightest stars.<br>Tap the empty sky to release a lantern.</div>
@@ -686,6 +715,7 @@
                 opacity: 0, duration: 1.5, onComplete: () => {
                     document.getElementById('opening').style.display = 'none';
                     document.getElementById('player').classList.add('player-active');
+                    document.getElementById('scroll-hint').style.opacity = '1';
                     init3D();
                 }
             });
@@ -949,10 +979,10 @@
             window.addEventListener('mouseup', () => { pMouseDown = false; });
             window.addEventListener('mousemove', (e) => {
                 if (activeScene === 'planetarium' && pMouseDown) {
-                    targetPYaw += (e.clientX - pMouseX) * 0.002;
-                    targetPPitch += (e.clientY - pMouseY) * 0.002;
+                    targetPYaw -= e.movementX * 0.002;
+                    targetPPitch -= e.movementY * 0.002;
                     targetPPitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetPPitch));
-                    pMouseX = e.clientX; pMouseY = e.clientY;
+                    document.getElementById('drag-hint').classList.add('hidden-hint');
                 }
                 mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -979,10 +1009,11 @@
                     targetScrollY = Math.max(0, Math.min(targetScrollY, (TOTAL_ARTWORKS + 1) * 15 + 2));
                 }
                 if (activeScene === 'planetarium' && pMouseDown) {
-                    targetPYaw += (e.touches[0].clientX - pMouseX) * 0.005;
-                    targetPPitch += (e.touches[0].clientY - pMouseY) * 0.005;
+                    targetPYaw += (e.touches[0].clientX - pMouseX) * 0.0015;
+                    targetPPitch += (e.touches[0].clientY - pMouseY) * 0.0015;
                     targetPPitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetPPitch));
                     pMouseX = e.touches[0].clientX; pMouseY = e.touches[0].clientY;
+                    document.getElementById('drag-hint').classList.add('hidden-hint');
                 }
             });
 
@@ -1057,6 +1088,8 @@
             isPlanetariumActive = true;
             const t1 = document.getElementById('pt1'); const t2 = document.getElementById('pt2');
             const hint = document.getElementById('planet-hint');
+            const dragHint = document.getElementById('drag-hint');
+            gsap.to(dragHint, { opacity: 1, duration: 2 });
             gsap.to(t1, { opacity: 1, duration: 3, delay: 1 });
             gsap.to(t1, { opacity: 0, duration: 2, delay: 6 });
             gsap.to(t2, { opacity: 1, duration: 3, delay: 9 });
@@ -1168,6 +1201,10 @@
             if (activeScene === 'museum') {
                 scrollY += (targetScrollY - scrollY) * 0.05;
                 cameraMuseum.position.z = 5 - scrollY;
+
+                if (scrollY > 5) {
+                    document.getElementById('scroll-hint').classList.add('hidden-hint');
+                }
 
                 if (dustMuseum) {
                     dustMuseum.rotation.y += 0.0005;
