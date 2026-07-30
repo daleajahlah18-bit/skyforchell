@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Best Part</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap"
+        rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-main: #f0f0f0;
+            --text-muted: #888888;
+            --accent: #ffffff;
+            --font-sans: 'Inter', sans-serif;
+            --font-serif: 'Playfair Display', serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.04;
+            background: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.8) 100%);
+        }
+
+        #opening {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 2s ease-in-out;
+        }
+
+        .opening-text {
+            font-family: var(--font-serif);
+            font-size: 2.5rem;
+            line-height: 1.4;
+            text-align: center;
+            font-weight: 400;
+            opacity: 0;
+            transform: translateY(20px);
+            margin-bottom: 4rem;
+        }
+
+        .opening-text span {
+            display: block;
+        }
+
+        .enter-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-main);
+            padding: 1rem 3rem;
+            font-family: var(--font-sans);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .enter-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: left 0.4s ease;
+        }
+
+        .enter-btn:hover {
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .enter-btn:hover::before {
+            left: 0;
+        }
+
+        #player {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+
+        .player-active {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+
+        .vinyl-container {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            animation: spin 4s linear infinite;
+            animation-play-state: paused;
+        }
+
+        .vinyl-container.playing {
+            animation-play-state: running;
+        }
+
+        .vinyl-inner {
+            width: 15px;
+            height: 15px;
+            background: var(--bg-color);
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+
+        .track-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .track-title {
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .track-artist {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-left: 1rem;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .control-btn:hover {
+            opacity: 1;
+        }
+
+        .progress-container {
+            width: 100px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+        }
+
+        .time {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #webgl {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        #scroll-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1000vh;
+            z-index: 1;
+        }
+
+        .ui-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 50;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 10%;
+        }
+
+        .artwork-info {
+            max-width: 400px;
+            opacity: 0;
+            transform: translateX(-30px);
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .artwork-info.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .info-num {
+            font-family: var(--font-serif);
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-style: italic;
+        }
+
+        .info-title {
+            font-family: var(--font-serif);
+            font-size: 2.5rem;
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-year {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-bottom: 2rem;
+            display: block;
+        }
+
+        .info-desc {
+            font-size: 0.9rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .elevator-ui {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 1s ease;
+            pointer-events: none;
+        }
+
+        .elevator-ui h2 {
+            font-family: var(--font-serif);
+            font-size: 2rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .enter-lift-btn {
+            pointer-events: auto;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 0.8rem 2rem;
+            font-family: var(--font-sans);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .enter-lift-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #fff;
+        }
+
+        .elevator-visible {
+            opacity: 1;
+        }
+
+        #planetarium-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 60;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .planet-text {
+            font-family: var(--font-serif);
+            font-size: 2.5rem;
+            text-align: center;
+            font-weight: 400;
+            opacity: 0;
+            position: absolute;
+            width: 80%;
+        }
+
+        .star-compliment {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-serif);
+            font-size: 2rem;
+            text-align: center;
+            font-style: italic;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 70;
+        }
+
+        #planet-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-serif);
+            font-size: 2rem;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 90;
+        }
+
+        #planet-hint {
+            position: fixed;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            letter-spacing: 2px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 90;
+            line-height: 1.6;
+        }
+
+        #wish-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-serif);
+            font-size: 2.5rem;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 80;
+        }
+
+        #final-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-serif);
+            font-size: 3rem;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 90;
+            line-height: 1.4;
+        }
+
+        .crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .crosshair.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.5);
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        #blackout {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 800;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #floor-indicator {
+            position: fixed;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-sans);
+            font-size: 1.5rem;
+            color: #d4af37;
+            letter-spacing: 4px;
+            opacity: 0;
+            z-index: 900;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .opening-text {
+                font-size: 1.8rem;
+            }
+
+            #player {
+                bottom: 1rem;
+                left: 1rem;
+                gap: 1rem;
+            }
+
+            .track-info {
+                display: none;
+            }
+
+            .artwork-info {
+                max-width: 100%;
+                padding-top: 50vh;
+                text-align: center;
+                transform: translateY(20px);
+            }
+
+            .artwork-info.visible {
+                transform: translateY(0);
+            }
+
+            .planet-text,
+            .star-compliment,
+            #wish-text,
+            #final-text {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="noise"></div>
+    <div class="vignette"></div>
+    <div id="blackout"></div>
+    <div id="floor-indicator">Lantai 01</div>
+
+    <div id="opening">
+        <div class="opening-text">
+            <span>For someone</span>
+            <span>who unknowingly</span>
+            <span>became</span>
+            <span>the best part</span>
+            <span>of my days.</span>
+        </div>
+        <button class="enter-btn">Enter Exhibition</button>
+    </div>
+
+    <div id="player">
+        <div class="vinyl-container" id="vinyl">
+            <div class="vinyl-inner"></div>
+        </div>
+        <div class="track-info">
+            <span class="track-title">The Best Part</span>
+            <span class="track-artist">Artist</span>
+        </div>
+        <div class="player-controls">
+            <button class="control-btn" id="play-pause">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path id="play-icon" d="M8 5v14l11-7z" />
+                </svg>
+            </button>
+            <span class="time" id="curr-time">0:00</span>
+            <div class="progress-container" id="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <span class="time" id="rem-time">-0:00</span>
+        </div>
+        <audio id="bg-audio" loop src="music.mp3"></audio>
+    </div>
+
+    <canvas id="webgl"></canvas>
+    <div id="scroll-content"></div>
+
+    <div class="ui-layer" id="ui-layer">
+        <div class="artwork-info" id="info-panel">
+            <div class="info-num" id="info-num">I</div>
+            <h2 class="info-title" id="info-title">Title</h2>
+            <span class="info-year" id="info-year">Year</span>
+            <p class="info-desc" id="info-desc">Description</p>
+        </div>
+        <div class="elevator-ui" id="elevator-panel">
+            <h2>Observation Deck</h2>
+            <button class="enter-lift-btn" id="enter-lift">Enter</button>
+        </div>
+    </div>
+
+    <div id="planetarium-ui">
+        <div class="planet-text" id="pt1">We spend so much time<br>looking back at memories.</div>
+        <div class="planet-text" id="pt2">Sometimes...<br>it's just as beautiful<br>to look forward.</div>
+        <div id="planet-hint">Look around. Tap the brightest stars.<br>Tap the empty sky to release a lantern.</div>
+    </div>
+
+    <div class="star-compliment" id="star-comp"></div>
+    <div id="wish-text">Make a wish.</div>
+    <div id="final-text">No matter<br>how big<br>the universe becomes...<br><br>you'll always be<br>one of my favorite
+        discoveries.</div>
+    <div class="crosshair" id="crosshair"></div>
+
+    <script>
+        // --- AUDIO ---
+        const audio = document.getElementById('bg-audio');
+        const playPauseBtn = document.getElementById('play-pause');
+        const playIcon = document.getElementById('play-icon');
+        const vinyl = document.getElementById('vinyl');
+        const progressBar = document.getElementById('progress-bar');
+        const currTimeEl = document.getElementById('curr-time');
+        const remTimeEl = document.getElementById('rem-time');
+        let isPlaying = false;
+
+        function formatTime(s) { const m = Math.floor(s / 60); const sc = Math.floor(s % 60); return `${m}:${sc < 10 ? '0' : ''}${sc}`; }
+        function togglePlay() {
+            if (isPlaying) { audio.pause(); playIcon.setAttribute('d', 'M8 5v14l11-7z'); vinyl.classList.remove('playing'); }
+            else { audio.play(); playIcon.setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z'); vinyl.classList.add('playing'); }
+            isPlaying = !isPlaying;
+        }
+        playPauseBtn.addEventListener('click', togglePlay);
+        audio.addEventListener('timeupdate', () => {
+            if (isNaN(audio.duration)) return;
+            progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+            currTimeEl.textContent = formatTime(audio.currentTime);
+            remTimeEl.textContent = `-${formatTime(audio.duration - audio.currentTime)}`;
+        });
+        document.getElementById('progress-container').addEventListener('click', (e) => {
+            const r = e.target.closest('.progress-container').getBoundingClientRect();
+            audio.currentTime = ((e.clientX - r.left) / r.width) * audio.duration;
+        });
+
+        // --- OPENING ---
+        gsap.to('.opening-text', { opacity: 1, y: 0, duration: 2, delay: 0.5, ease: 'power2.out' });
+        gsap.to('.enter-btn', { opacity: 1, duration: 1, delay: 2.5 });
+        document.querySelector('.enter-btn').addEventListener('click', () => {
+            audio.volume = 0;
+            audio.play().then(() => {
+                isPlaying = true; playIcon.setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z'); vinyl.classList.add('playing');
+                gsap.to(audio, { volume: 0.8, duration: 3 });
+            }).catch(e => console.log(e));
+            gsap.to('#opening', {
+                opacity: 0, duration: 1.5, onComplete: () => {
+                    document.getElementById('opening').style.display = 'none';
+                    document.getElementById('player').classList.add('player-active');
+                    init3D();
+                }
+            });
+        });
+
+        // --- THREE.JS ---
+        let renderer, cameraMuseum, cameraPlanetarium, sceneMuseum, scenePlanetarium;
+        let activeScene = 'museum';
+        let scrollY = 0, targetScrollY = 0;
+        let dustMuseum;
+        let artworks = [];
+        const TOTAL_ARTWORKS = 6;
+
+        let liftGroup, liftDoorL, liftDoorR;
+        let isLiftMoving = false;
+
+        let stars, interactiveStars = [], shootingStar, auroraGroup, lanternsGroup;
+        let lanterns = [];
+        let raycaster, mouse;
+        let isPlanetariumActive = false;
+        let pYaw = 0, pPitch = 0, targetPYaw = 0, targetPPitch = 0; // Look around
+        let pMouseDown = false, pMouseX = 0, pMouseY = 0;
+        let allStarsObj;
+
+        const galleryData = [
+            {
+                num: "Artwork I",
+                title: "Unexpected.",
+                desc: "Some meetings aren't planned. They're simply meant to happen."
+            },
+            {
+                num: "Exhibit II",
+                title: "Comfort.",
+                desc: "Somehow, talking to you never felt difficult."
+            },
+            {
+                num: "Curated memory III",
+                title: "Smile.",
+                desc: "It's funny how one smile can stay in someone's mind."
+            },
+            {
+                num: "Fragemnt IV",
+                title: "Curious.",
+                desc: "I'd love to know all the stories that made you who you are."
+            },
+            {
+                num: "Sequence V",
+                title: "Lucky.",
+                desc: "I'm glad life decided our paths should cross."
+            },
+            {
+                num: "Constellation VI",
+                title: "Beginning.",
+                desc: "Maybe every beautiful story starts this quietly."
+            }
+        ];
+
+        const compliments = [
+            "I hope\nyou never lose\nthat beautiful smile.",
+            "May your dreams\nalways be bigger\nthan your fears.",
+            "I hope life\nis always kind\nto you.",
+            "Thank you\nfor existing.",
+            "And if life gets hard...\nI'll always cheer for you."
+        ];
+
+        function init3D() {
+            const canvas = document.getElementById('webgl');
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+
+            // MUSEUM SCENE
+            sceneMuseum = new THREE.Scene();
+            sceneMuseum.fog = new THREE.FogExp2(0x050505, 0.03);
+            cameraMuseum = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+            cameraMuseum.position.set(0, 0, 5);
+
+            const ambLight = new THREE.AmbientLight(0xffffff, 0.1);
+            sceneMuseum.add(ambLight);
+
+            const floorGeo = new THREE.PlaneGeometry(50, 200);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.2 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2; floor.position.set(0, -2, -50);
+            sceneMuseum.add(floor);
+
+            const texLoader = new THREE.TextureLoader();
+            for (let i = 0; i < TOTAL_ARTWORKS; i++) {
+                const z = -(i * 15) - 5; const isR = i % 2 === 0; const x = isR ? 2.5 : -2.5;
+                const frame = new THREE.Mesh(new THREE.PlaneGeometry(3, 4.5), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.1, metalness: 0.8 }));
+                frame.position.set(x, 0, z); frame.rotation.y = isR ? -0.1 : 0.1;
+
+                const img = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 4.3), new THREE.MeshBasicMaterial({ color: 0x1a1a1a }));
+                texLoader.load(`image${i + 1}.jpeg`, (t) => { img.material.map = t; img.material.color.setHex(0xffffff); img.material.needsUpdate = true; });
+                img.position.z = 0.01; frame.add(img);
+
+                const spot = new THREE.SpotLight(0xffeacc, 0);
+                spot.position.set(x, 4, z + 2); spot.target = frame; spot.angle = Math.PI / 6; spot.penumbra = 0.5; spot.distance = 10;
+                sceneMuseum.add(spot); sceneMuseum.add(frame);
+                artworks.push({ frame, spot, data: galleryData[i], baseZ: z, baseX: x });
+            }
+
+            // Elevator door at end
+            const endZ = -(TOTAL_ARTWORKS * 15) - 10;
+            const liftGeo = new THREE.PlaneGeometry(4, 6);
+            const liftMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9, roughness: 0.2 });
+            const lift = new THREE.Mesh(liftGeo, liftMat);
+            lift.position.set(0, 1, endZ);
+            sceneMuseum.add(lift);
+
+            // Dust Museum
+            const dGeo = new THREE.BufferGeometry();
+            const dCount = window.innerWidth < 768 ? 200 : 800;
+            const dPos = new Float32Array(dCount * 3);
+            for (let i = 0; i < dCount * 3; i++) dPos[i] = (Math.random() - 0.5) * (i % 3 === 2 ? 100 : 20);
+            dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
+            dustMuseum = new THREE.Points(dGeo, new THREE.PointsMaterial({ size: 0.02, color: 0xffffff, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending }));
+            sceneMuseum.add(dustMuseum);
+
+            // PLANETARIUM SCENE
+            scenePlanetarium = new THREE.Scene();
+            scenePlanetarium.background = new THREE.Color(0x000000);
+            cameraPlanetarium = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            cameraPlanetarium.position.set(0, 0, 0);
+
+            // Dome
+            const domeGeo = new THREE.SphereGeometry(100, 32, 32);
+            const domeMat = new THREE.MeshBasicMaterial({ color: 0x020205, side: THREE.BackSide });
+            scenePlanetarium.add(new THREE.Mesh(domeGeo, domeMat));
+
+            // Planetarium Floor
+            const pFloor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x020205, roughness: 0.5 }));
+            pFloor.rotation.x = -Math.PI / 2;
+            scenePlanetarium.add(pFloor);
+
+            // Planetarium Lift
+            liftGroup = new THREE.Group();
+            const liftWallMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.7, roughness: 0.3, side: THREE.DoubleSide });
+            const liftFloorMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
+
+            const bWall = new THREE.Mesh(new THREE.PlaneGeometry(4, 6), liftWallMat); bWall.rotation.y = Math.PI; bWall.position.set(0, 3, 2);
+            const lWall = new THREE.Mesh(new THREE.PlaneGeometry(4, 6), liftWallMat); lWall.rotation.y = Math.PI / 2; lWall.position.set(-2, 3, 0);
+            const rWall = new THREE.Mesh(new THREE.PlaneGeometry(4, 6), liftWallMat); rWall.rotation.y = -Math.PI / 2; rWall.position.set(2, 3, 0);
+            const fl = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), liftFloorMat); fl.rotation.x = -Math.PI / 2; fl.position.set(0, 0, 0);
+            const cl = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), liftWallMat); cl.rotation.x = Math.PI / 2; cl.position.set(0, 6, 0);
+
+            liftDoorL = new THREE.Mesh(new THREE.PlaneGeometry(2, 6), liftWallMat); liftDoorL.position.set(-1, 3, -2);
+            liftDoorR = new THREE.Mesh(new THREE.PlaneGeometry(2, 6), liftWallMat); liftDoorR.position.set(1, 3, -2);
+
+            const lLight = new THREE.PointLight(0xffffff, 1, 10); lLight.position.set(0, 5, 0);
+
+            liftGroup.add(bWall, lWall, rWall, fl, cl, liftDoorL, liftDoorR, lLight);
+            liftGroup.position.set(0, -100, 40);
+            scenePlanetarium.add(liftGroup);
+
+            // Aurora
+            auroraGroup = new THREE.Group();
+            const aurMat1 = new THREE.MeshBasicMaterial({ color: 0x22ffaa, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+            const aurMat2 = new THREE.MeshBasicMaterial({ color: 0x8844ff, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+            for (let i = 0; i < 4; i++) {
+                const aur = new THREE.Mesh(new THREE.TorusGeometry(80, 15, 16, 100), i % 2 == 0 ? aurMat1 : aurMat2);
+                aur.rotation.x = Math.PI / 2 + (Math.random() - 0.5) * 0.5;
+                aur.position.y = 40 + i * 10;
+                aur.position.x = (Math.random() - 0.5) * 30;
+                auroraGroup.add(aur);
+            }
+            scenePlanetarium.add(auroraGroup);
+
+            // Lanterns
+            lanternsGroup = new THREE.Group();
+            const lanternGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.4, 8);
+            const lanternMat = new THREE.MeshBasicMaterial({ color: 0xffb84d, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
+            for (let i = 0; i < 40; i++) {
+                const lantern = new THREE.Mesh(lanternGeo, lanternMat);
+                lantern.position.set(
+                    (Math.random() - 0.5) * 80,
+                    Math.random() * 40,
+                    (Math.random() - 0.5) * 80
+                );
+                lantern.userData = {
+                    speedY: 0.02 + Math.random() * 0.02,
+                    speedX: (Math.random() - 0.5) * 0.02,
+                    phase: Math.random() * Math.PI * 2
+                };
+                lanternsGroup.add(lantern);
+                lanterns.push(lantern);
+            }
+            scenePlanetarium.add(lanternsGroup);
+
+            // Stars
+            const sGeo = new THREE.BufferGeometry();
+            const sCount = 2000;
+            const sPos = new Float32Array(sCount * 3);
+            for (let i = 0; i < sCount * 3; i += 3) {
+                const u = Math.random(), v = Math.random();
+                const theta = u * 2.0 * Math.PI, phi = Math.acos(2.0 * v - 1.0);
+                const r = 90;
+                sPos[i] = r * Math.sin(phi) * Math.cos(theta);
+                sPos[i + 1] = r * Math.sin(phi) * Math.sin(theta);
+                sPos[i + 2] = r * Math.cos(phi);
+            }
+            sGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
+            allStarsObj = new THREE.Points(sGeo, new THREE.PointsMaterial({ size: 0.3, color: 0xffffff, transparent: true, opacity: 0.6 }));
+            scenePlanetarium.add(allStarsObj);
+
+            // Telescope Decoration
+            const teleGroup = new THREE.Group();
+            const tBase = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 1, 2, 16), new THREE.MeshStandardMaterial({ color: 0x111, metalness: 0.8 }));
+            tBase.position.y = -1;
+            const tTube = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 4, 16), new THREE.MeshStandardMaterial({ color: 0x222, metalness: 0.9 }));
+            tTube.rotation.z = Math.PI / 4; tTube.position.y = 1;
+            teleGroup.add(tBase, tTube);
+            teleGroup.position.set(0, -5, -10);
+            scenePlanetarium.add(new THREE.AmbientLight(0xffffff, 0.2));
+            const tlLight = new THREE.PointLight(0xffffff, 0.5); tlLight.position.set(0, 0, -5); scenePlanetarium.add(tlLight);
+            scenePlanetarium.add(teleGroup);
+
+            // Interactive Stars
+            interactiveStars = [];
+            for (let i = 0; i < 5; i++) {
+                const ism = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                const theta = (i / 5) * Math.PI * 2; const phi = Math.PI / 4 + Math.random() * 0.5;
+                ism.position.set(80 * Math.sin(phi) * Math.cos(theta), 80 * Math.cos(phi), 80 * Math.sin(phi) * Math.sin(theta));
+                ism.userData = { id: i, comp: compliments[i] };
+                scenePlanetarium.add(ism);
+                interactiveStars.push(ism);
+            }
+
+            // Shooting Star
+            shootingStar = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+            shootingStar.position.set(100, 100, 100);
+            shootingStar.userData = { isShooting: true };
+            scenePlanetarium.add(shootingStar);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            window.addEventListener('wheel', onWheel, { passive: false });
+            window.addEventListener('resize', onResize);
+
+            // Planetarium controls
+            window.addEventListener('mousedown', (e) => { if (activeScene === 'planetarium') { pMouseDown = true; pMouseX = e.clientX; pMouseY = e.clientY; checkInteraction(e); } });
+            window.addEventListener('mouseup', () => { pMouseDown = false; });
+            window.addEventListener('mousemove', (e) => {
+                if (activeScene === 'planetarium' && pMouseDown) {
+                    targetPYaw += (e.clientX - pMouseX) * 0.002;
+                    targetPPitch += (e.clientY - pMouseY) * 0.002;
+                    targetPPitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetPPitch));
+                    pMouseX = e.clientX; pMouseY = e.clientY;
+                }
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+            // Mobile touch
+            window.addEventListener('touchstart', (e) => { if (activeScene === 'planetarium') { pMouseDown = true; pMouseX = e.touches[0].clientX; pMouseY = e.touches[0].clientY; checkInteraction(e.touches[0]); } });
+            window.addEventListener('touchend', () => { pMouseDown = false; });
+            window.addEventListener('touchmove', (e) => {
+                if (activeScene === 'planetarium' && pMouseDown) {
+                    targetPYaw += (e.touches[0].clientX - pMouseX) * 0.005;
+                    targetPPitch += (e.touches[0].clientY - pMouseY) * 0.005;
+                    targetPPitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetPPitch));
+                    pMouseX = e.touches[0].clientX; pMouseY = e.touches[0].clientY;
+                }
+            });
+
+            animate();
+        }
+
+        function onWheel(e) {
+            if (activeScene === 'museum') {
+                targetScrollY += e.deltaY * 0.01;
+                targetScrollY = Math.max(0, Math.min(targetScrollY, (TOTAL_ARTWORKS + 1) * 15 + 2));
+            }
+        }
+        function onResize() {
+            cameraMuseum.aspect = window.innerWidth / window.innerHeight; cameraMuseum.updateProjectionMatrix();
+            cameraPlanetarium.aspect = window.innerWidth / window.innerHeight; cameraPlanetarium.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Lift Transition
+        document.getElementById('enter-lift').addEventListener('click', () => {
+            document.getElementById('elevator-panel').style.display = 'none';
+            document.getElementById('scroll-content').style.display = 'none';
+            document.getElementById('info-panel').style.display = 'none';
+
+            gsap.to(cameraMuseum.position, { z: cameraMuseum.position.z - 4, duration: 2, ease: "power2.inOut" });
+
+            gsap.to('#blackout', {
+                opacity: 1, duration: 1.5, delay: 0.5, onComplete: () => {
+                    activeScene = 'planetarium';
+
+                    cameraPlanetarium.position.set(0, 3, 40);
+                    cameraPlanetarium.rotation.set(0, 0, 0, 'YXZ');
+                    targetPYaw = 0; targetPPitch = 0; pYaw = 0; pPitch = 0;
+
+                    gsap.to('#blackout', { opacity: 0, duration: 1 });
+
+                    const floorInd = document.getElementById('floor-indicator');
+                    gsap.to(floorInd, { opacity: 1, duration: 1 });
+
+                    let floorObj = { floor: 1 };
+                    gsap.to(floorObj, {
+                        floor: 18, duration: 8, ease: "power1.inOut", onUpdate: () => {
+                            let f = Math.floor(floorObj.floor);
+                            floorInd.innerText = "Lantai " + (f < 10 ? "0" + f : f);
+                        }
+                    });
+
+                    isLiftMoving = true;
+                    gsap.to(liftGroup.position, {
+                        y: 0, duration: 8, ease: "power1.inOut", onComplete: () => {
+                            isLiftMoving = false;
+                            gsap.to(floorInd, { opacity: 0, duration: 1 });
+
+                            gsap.to(liftDoorL.position, { x: -3, duration: 2, delay: 0.5, ease: "power2.inOut" });
+                            gsap.to(liftDoorR.position, {
+                                x: 3, duration: 2, delay: 0.5, ease: "power2.inOut", onComplete: () => {
+                                    gsap.to(cameraPlanetarium.position, {
+                                        z: 10, duration: 5, ease: "power2.inOut", onComplete: () => {
+                                            document.getElementById('crosshair').classList.add('active');
+                                            planetariumSequence();
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+        function planetariumSequence() {
+            isPlanetariumActive = true;
+            const t1 = document.getElementById('pt1'); const t2 = document.getElementById('pt2');
+            const hint = document.getElementById('planet-hint');
+            gsap.to(t1, { opacity: 1, duration: 3, delay: 1 });
+            gsap.to(t1, { opacity: 0, duration: 2, delay: 6 });
+            gsap.to(t2, { opacity: 1, duration: 3, delay: 9 });
+            gsap.to(t2, { opacity: 0, duration: 2, delay: 14 });
+            gsap.to(hint, { opacity: 1, duration: 3, delay: 17 });
+
+            // Start shooting stars occasionally
+            setInterval(triggerShootingStar, 15000);
+
+            // Ending sequence based on audio
+            setInterval(() => {
+                if (audio.duration && audio.currentTime > audio.duration - 20) triggerEnding();
+            }, 1000);
+        }
+
+        let isEnding = false;
+        function triggerEnding() {
+            if (isEnding) return; isEnding = true;
+            document.getElementById('crosshair').classList.remove('active');
+            gsap.to(allStarsObj.material, { opacity: 0, duration: 10 });
+            interactiveStars.forEach(s => gsap.to(s.material, { opacity: 0, duration: 10 }));
+            // Keep one star
+            const fav = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+            fav.position.set(0, 50, -50); scenePlanetarium.add(fav);
+            gsap.from(fav.material, { opacity: 0, duration: 5 });
+
+            gsap.to('#final-text', { opacity: 1, duration: 4, delay: 5 });
+            gsap.to('#blackout', { opacity: 1, duration: 5, delay: 15 });
+        }
+
+        function triggerShootingStar() {
+            if (isEnding) return;
+            shootingStar.position.set(50, 80, -50);
+            gsap.to(shootingStar.position, { x: -80, y: 20, z: -80, duration: 2, ease: "none" });
+        }
+
+        function releaseLantern() {
+            if (!lanternsGroup) return;
+            const lanternGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.4, 8);
+            const lanternMat = new THREE.MeshBasicMaterial({ color: 0xffb84d, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
+            const lantern = new THREE.Mesh(lanternGeo, lanternMat);
+
+            lantern.position.copy(cameraPlanetarium.position);
+            lantern.position.y -= 1;
+            const dir = new THREE.Vector3();
+            cameraPlanetarium.getWorldDirection(dir);
+            lantern.position.addScaledVector(dir, 5);
+
+            lantern.userData = {
+                speedY: 0.03 + Math.random() * 0.02,
+                speedX: (Math.random() - 0.5) * 0.02,
+                phase: Math.random() * Math.PI * 2
+            };
+            lanternsGroup.add(lantern);
+            lanterns.push(lantern);
+
+            lantern.scale.set(0, 0, 0);
+            gsap.to(lantern.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 1.5, ease: "back.out(1.5)" });
+        }
+
+        let compTimeout;
+        let hintHidden = false;
+        function checkInteraction(e) {
+            if (!isPlanetariumActive || isEnding) return;
+
+            if (!hintHidden) {
+                gsap.to('#planet-hint', { opacity: 0, duration: 1 });
+                hintHidden = true;
+            }
+
+            raycaster.setFromCamera(mouse, cameraPlanetarium);
+            const intersects = raycaster.intersectObjects([...interactiveStars, shootingStar]);
+            if (intersects.length > 0) {
+                const obj = intersects[0].object;
+                if (obj.userData.isShooting) {
+                    const wt = document.getElementById('wish-text');
+                    wt.innerText = "Make a wish.";
+                    gsap.to(wt, { opacity: 1, duration: 1 });
+                    setTimeout(() => {
+                        gsap.to(wt, {
+                            opacity: 0, duration: 1, onComplete: () => {
+                                wt.innerText = "I already did.";
+                                gsap.to(wt, { opacity: 1, duration: 2 });
+                                gsap.to(wt, { opacity: 0, duration: 2, delay: 4 });
+                            }
+                        });
+                    }, 2000);
+                } else {
+                    const sc = document.getElementById('star-comp');
+                    sc.innerText = obj.userData.comp;
+                    gsap.to(sc, { opacity: 1, duration: 1 });
+                    clearTimeout(compTimeout);
+                    compTimeout = setTimeout(() => gsap.to(sc, { opacity: 0, duration: 2 }), 4000);
+                    // Flash star
+                    gsap.to(obj.scale, { x: 2, y: 2, z: 2, duration: 0.2, yoyo: true, repeat: 1 });
+                }
+            } else {
+                releaseLantern();
+            }
+        }
+
+        const infoPanel = document.getElementById('info-panel');
+        const elevPanel = document.getElementById('elevator-panel');
+        let currentActive = -1;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (activeScene === 'museum') {
+                scrollY += (targetScrollY - scrollY) * 0.05;
+                cameraMuseum.position.z = 5 - scrollY;
+
+                if (dustMuseum) {
+                    dustMuseum.rotation.y += 0.0005;
+                    dustMuseum.position.z = cameraMuseum.position.z - 10;
+                }
+
+                let activeFound = false;
+                artworks.forEach((art, idx) => {
+                    const dist = cameraMuseum.position.z - art.baseZ;
+                    const time = Date.now() * 0.001;
+                    art.frame.position.y = Math.sin(time + idx) * 0.05;
+                    art.frame.rotation.y = (art.baseX > 0 ? -0.1 : 0.1) + Math.sin(time * 0.5) * 0.02;
+
+                    if (dist > 3 && dist < 12) {
+                        activeFound = true;
+                        if (currentActive !== idx) {
+                            currentActive = idx;
+                            infoPanel.classList.remove('visible');
+                            setTimeout(() => {
+                                document.getElementById('info-num').textContent = art.data.num;
+                                document.getElementById('info-title').textContent = art.data.title;
+                                document.getElementById('info-year').textContent = art.data.year;
+                                document.getElementById('info-desc').textContent = art.data.desc;
+                                infoPanel.style.marginLeft = art.baseX > 0 ? '0' : 'auto';
+                                infoPanel.style.marginRight = art.baseX > 0 ? 'auto' : '0';
+                                infoPanel.style.textAlign = art.baseX > 0 ? 'left' : 'right';
+                                infoPanel.classList.add('visible');
+                            }, 400);
+                            gsap.to(art.spotLight, { intensity: 2, duration: 1.5 });
+                        }
+                    } else { gsap.to(art.spotLight, { intensity: 0, duration: 1 }); }
+                });
+
+                if (!activeFound && currentActive !== -1) { infoPanel.classList.remove('visible'); currentActive = -1; }
+
+                if (scrollY > (TOTAL_ARTWORKS * 15) + 3) { elevPanel.classList.add('elevator-visible'); }
+                else { elevPanel.classList.remove('elevator-visible'); }
+
+                renderer.render(sceneMuseum, cameraMuseum);
+            }
+            else if (activeScene === 'planetarium') {
+                pYaw += (targetPYaw - pYaw) * 0.1;
+                pPitch += (targetPPitch - pPitch) * 0.1;
+                cameraPlanetarium.rotation.set(pPitch, pYaw, 0, 'YXZ');
+
+                if (isLiftMoving) {
+                    const time = Date.now() * 0.05;
+                    cameraPlanetarium.position.y = liftGroup.position.y + 3 + Math.sin(time) * 0.05;
+                } else if (liftGroup.position.y === 0 && cameraPlanetarium.position.z === 40) {
+                    cameraPlanetarium.position.y = 3;
+                }
+
+                if (allStarsObj) allStarsObj.rotation.y += 0.0002;
+
+                if (auroraGroup) {
+                    auroraGroup.children.forEach((aur, i) => {
+                        aur.rotation.z += 0.0003 * (i % 2 == 0 ? 1 : -1);
+                    });
+                }
+
+                if (lanterns.length > 0) {
+                    const time = Date.now() * 0.001;
+                    lanterns.forEach(lantern => {
+                        lantern.position.y += lantern.userData.speedY;
+                        lantern.position.x += lantern.userData.speedX + Math.sin(time + lantern.userData.phase) * 0.01;
+                        if (lantern.position.y > 80) lantern.position.y = -10;
+                    });
+                }
+
+                // Update crosshair hover
+                if (!isEnding) {
+                    raycaster.setFromCamera(mouse, cameraPlanetarium);
+                    const intersects = raycaster.intersectObjects([...interactiveStars, shootingStar]);
+                    if (intersects.length > 0) document.getElementById('crosshair').style.background = 'rgba(255,255,255,0.9)';
+                    else document.getElementById('crosshair').style.background = 'rgba(255,255,255,0.2)';
+                }
+
+                renderer.render(scenePlanetarium, cameraPlanetarium);
+            }
+        }
+    </script>
+</body>
+
+</html>
