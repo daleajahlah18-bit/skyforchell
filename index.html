@@ -22,6 +22,7 @@
             --text-main: #f0f0f0;
             --text-muted: #888888;
             --accent: #ffffff;
+            --gold: #c9a463;
             --font-sans: 'Inter', sans-serif;
             --font-serif: 'Playfair Display', serif;
         }
@@ -87,13 +88,18 @@
             line-height: 1.4;
             text-align: center;
             font-weight: 400;
-            opacity: 0;
-            transform: translateY(20px);
             margin-bottom: 4rem;
         }
 
         .opening-text span {
             display: block;
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        .gold-text {
+            color: var(--gold);
+            font-style: italic;
         }
 
         .enter-btn {
@@ -544,7 +550,7 @@
             <span>For someone</span>
             <span>who unknowingly</span>
             <span>became</span>
-            <span>the best part</span>
+            <span class="gold-text">the best part</span>
             <span>of my days.</span>
         </div>
         <button class="enter-btn">Enter Exhibition</button>
@@ -656,8 +662,8 @@
         });
 
         // --- OPENING ---
-        gsap.to('.opening-text', { opacity: 1, y: 0, duration: 2, delay: 0.5, ease: 'power2.out' });
-        gsap.to('.enter-btn', { opacity: 1, duration: 1, delay: 2.5 });
+        gsap.to('.opening-text span', { opacity: 1, y: 0, duration: 1.5, stagger: 1.0, delay: 0.5, ease: 'power2.out' });
+        gsap.to('.enter-btn', { opacity: 1, duration: 1, delay: 6.0 });
         document.querySelector('.enter-btn').addEventListener('click', () => {
             audio.volume = 0;
             audio.play().then(() => {
