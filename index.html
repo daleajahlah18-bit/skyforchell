@@ -905,7 +905,10 @@
                     mTouchY = e.touches[0].clientY;
                 }
                 if (activeScene === 'planetarium') { 
-                    pMouseDown = true; pMouseX = e.touches[0].clientX; pMouseY = e.touches[0].clientY; checkInteraction(e.touches[0]); 
+                    pMouseDown = true; pMouseX = e.touches[0].clientX; pMouseY = e.touches[0].clientY; 
+                    mouse.x = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(e.touches[0].clientY / window.innerHeight) * 2 + 1;
+                    checkInteraction(e.touches[0]); 
                 } 
             });
             window.addEventListener('touchend', () => { pMouseDown = false; });
