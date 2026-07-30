@@ -373,10 +373,13 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 1s ease;
+        }
+
+        .active-hint {
             animation: pulse-hint 2s infinite ease-in-out;
         }
         
-        #scroll-hint.hidden-hint, #drag-hint.hidden-hint {
+        .hidden-hint {
             opacity: 0 !important;
             animation: none !important;
         }
@@ -715,7 +718,7 @@
                 opacity: 0, duration: 1.5, onComplete: () => {
                     document.getElementById('opening').style.display = 'none';
                     document.getElementById('player').classList.add('player-active');
-                    document.getElementById('scroll-hint').style.opacity = '1';
+                    document.getElementById('scroll-hint').classList.add('active-hint');
                     init3D();
                 }
             });
@@ -982,7 +985,9 @@
                     targetPYaw -= e.movementX * 0.002;
                     targetPPitch -= e.movementY * 0.002;
                     targetPPitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetPPitch));
-                    document.getElementById('drag-hint').classList.add('hidden-hint');
+                    const dh = document.getElementById('drag-hint');
+                    dh.classList.remove('active-hint');
+                    dh.classList.add('hidden-hint');
                 }
                 mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -1013,7 +1018,9 @@
                     targetPPitch += (e.touches[0].clientY - pMouseY) * 0.0015;
                     targetPPitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetPPitch));
                     pMouseX = e.touches[0].clientX; pMouseY = e.touches[0].clientY;
-                    document.getElementById('drag-hint').classList.add('hidden-hint');
+                    const dh = document.getElementById('drag-hint');
+                    dh.classList.remove('active-hint');
+                    dh.classList.add('hidden-hint');
                 }
             });
 
@@ -1089,7 +1096,7 @@
             const t1 = document.getElementById('pt1'); const t2 = document.getElementById('pt2');
             const hint = document.getElementById('planet-hint');
             const dragHint = document.getElementById('drag-hint');
-            gsap.to(dragHint, { opacity: 1, duration: 2 });
+            dragHint.classList.add('active-hint');
             gsap.to(t1, { opacity: 1, duration: 3, delay: 1 });
             gsap.to(t1, { opacity: 0, duration: 2, delay: 6 });
             gsap.to(t2, { opacity: 1, duration: 3, delay: 9 });
@@ -1203,7 +1210,9 @@
                 cameraMuseum.position.z = 5 - scrollY;
 
                 if (scrollY > 5) {
-                    document.getElementById('scroll-hint').classList.add('hidden-hint');
+                    const sh = document.getElementById('scroll-hint');
+                    sh.classList.remove('active-hint');
+                    sh.classList.add('hidden-hint');
                 }
 
                 if (dustMuseum) {
