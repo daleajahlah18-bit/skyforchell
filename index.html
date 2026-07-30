@@ -865,16 +865,23 @@
             // Interactive Stars
             interactiveStars = [];
             for (let i = 0; i < 5; i++) {
-                const ism = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                // Invisible large hit sphere (radius 8)
+                const hitMesh = new THREE.Mesh(new THREE.SphereGeometry(8, 16, 16), new THREE.MeshBasicMaterial({ visible: false }));
+                // Visible star
+                const ism = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                hitMesh.add(ism);
+                
                 const theta = (i / 5) * Math.PI * 2; const phi = Math.PI / 4 + Math.random() * 0.5;
-                ism.position.set(80 * Math.sin(phi) * Math.cos(theta), 80 * Math.cos(phi), 80 * Math.sin(phi) * Math.sin(theta));
-                ism.userData = { id: i, comp: compliments[i] };
-                scenePlanetarium.add(ism);
-                interactiveStars.push(ism);
+                hitMesh.position.set(80 * Math.sin(phi) * Math.cos(theta), 80 * Math.cos(phi), 80 * Math.sin(phi) * Math.sin(theta));
+                hitMesh.userData = { id: i, comp: compliments[i] };
+                scenePlanetarium.add(hitMesh);
+                interactiveStars.push(hitMesh);
             }
 
             // Shooting Star
-            shootingStar = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+            shootingStar = new THREE.Mesh(new THREE.SphereGeometry(10, 16, 16), new THREE.MeshBasicMaterial({ visible: false }));
+            const ssVis = new THREE.Mesh(new THREE.SphereGeometry(2, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+            shootingStar.add(ssVis);
             shootingStar.position.set(100, 100, 100);
             shootingStar.userData = { isShooting: true };
             scenePlanetarium.add(shootingStar);
